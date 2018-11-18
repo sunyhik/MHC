@@ -1,0 +1,97 @@
+from scipy.integrate import quad
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import interpolate
+
+width, height = plt.figaspect(1.5)
+fig = plt.figure(figsize=(width,height), dpi=150)
+
+E = 0
+listE=[]
+listk1=[]
+listkn1=[]
+listk2=[]
+listV=[]
+while (E < 0.55):
+   g = 0.01  
+   E = E + g 
+   T1= 292.15    
+   #optimal when R2=0.7 
+   R1=0.2
+   R2=0.7
+   Rn1=((96485*R1)/(8.314*T1))
+   Rn2=((96485*R2)/(8.314*T1))
+
+   Ef=0
+    
+   def integrand1(x1, E):
+        return np.exp(-(Rn1/4)*((1-((x1-Ef)/R1))**2))*(1/(1+np.exp((96485*(x1-E))/(8.314*T1))))
+   I1 = quad(integrand1, -np.inf, np.inf, args=(E))  
+
+
+   def integrandn1(xn1, E):
+        return np.exp(-(Rn1/4)*((1+((xn1-Ef)/R1))**2))*(1/(1+np.exp(-(96485*(xn1-E))/(8.314*T1))))
+   In1 = quad(integrandn1, -np.inf, np.inf, args=(E))   
+ 
+  
+   def integrand2(x2, E):
+        return np.exp(-(Rn2/4)*((1-((x2-Ef)/R2))**2))*(1/(1+np.exp((96485*(x2-E))/(8.314*T1))))
+   I2 = quad(integrand2, -np.inf, np.inf, args=(E)) 
+
+    
+   #optimal when x=0.000005, z=0.00000078 
+   x=0.000005
+   z=0.00000078 
+   V1 = z*I1[0]*I2[0]/(In1[0]+(x*I1[0]))
+   
+   
+   plt.subplot(2, 1, 1)
+   plt.plot(V1, E, 'bx')
+    
+   listE.append(str(E))
+   listEf=[float(x) for x in listE]
+   listk1.append(str(I1[0]))
+   listk1f=[float(x) for x in listk1]
+   loglistk1f=np.log10(listk1f)
+   listkn1.append(str(In1[0]))
+   listkn1f=[float(x) for x in listkn1]
+   listk2.append(str(I2[0]))
+   listk2f=[float(x) for x in listk2] 
+   loglistk2f=np.log10(listk2f) 
+   listV.append(str(V1)) 
+   listVf=[float(x) for x in listV]
+   loglistVf=np.log10(listVf)   
+   
+
+   plt.xlabel('I', fontsize=18)
+   plt.ylabel('V', fontsize=18) 
+   plt.xscale('log') 
+
+   
+file_name = PtOER.csv'
+data = np.genfromtxt(file_name, delimiter = ",")    
+
+ExpI = [i[2] for i in data[0:]]  ### loop through the data from line 0, and x is the first element in each line 
+ExpV292 = [i[0] for i in data[0:]]
+
+plt.plot(ExpI, ExpV292, 'r.')
+
+
+######
+
+plt.subplot(2, 1, 2)
+plt.xscale('log') 
+plt.xlabel('log I', fontsize=18) 
+plt.ylabel('slope / $mVdec^{-1}$', fontsize=12)
+
+
+plt.grid(b=True, which='major', axis='y', color='k', linestyle='--', linewidth=0.2)
+plt.grid(b=True, which='minor', axis='y', color='k', linestyle='--')
+
+Vgap=(3*g)
+
+IgraddV1 = [(listVf[i]+((listVf[i+3] - listVf[i])/2)) for i in range(len(listVf)-3)]
+dV1 =[(Vgap/(loglistVf[i+3] - loglistVf[i])) for i in range(len(loglistVf)-3)]
+plt.plot(IgraddV1, dV1, 'b.', label='T=282 K')
+
+plt.show()
